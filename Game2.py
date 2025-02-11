@@ -1,4 +1,4 @@
-import pygame.event
+import pygame
 from pygame import *
 from random import randint
 import sys
@@ -14,7 +14,8 @@ DISPLAY = (WIN_WIDTH, WIN_HEIGHT)  # Группируем ширину и выс
 BACKGROUND_COLOR = (70, 195, 219)
 
 class Bobr:
-    def __init__(self):
+    def __init__(self, game):
+        self.game = game  # Сохраняем ссылку на объект игры
         self.image = pygame.image.load("bobr_game.png")
         self.image = transform.scale(self.image, (WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
@@ -35,12 +36,13 @@ class Bobr:
         if ((pipe.rect_top.left <= self.rect.right and pipe.rect_top.bottom >= self.rect.top)
                 or (pipe.rect_bottom.left <= self.rect.right and pipe.rect_bottom.top <= self.rect.bottom)
                 or (self.rect.bottom >= WIN_HEIGHT) or (self.rect.bottom <= 0)):
-            game.end_game()
+            self.game.end_game()  # Вызов метода end_game() через объект game
 
     def update(self):
         self.rect.move_ip(0, self.velocity)
         self.velocity += self.gravity
         self.key_press()
+
 
 class Pipe:
     def __init__(self):
@@ -61,7 +63,6 @@ class Pipe:
         self.rect_bottom = self.image_bottom.get_rect()
         self.rect_bottom.bottom = WIN_HEIGHT + 10
         self.rect_bottom.right = WIN_WIDTH + self.width
-
 
     def random_height(self):
         return randint(200, 240)
@@ -88,9 +89,12 @@ class Pipe:
         # Нижнее препятствие
         surface.blit(self.image_bottom, self.rect_bottom)
 
+
 class Game:
     def __init__(self):
         self.status = True
+        self.bobr = Bobr(self)  # Передаем ссылку на объект игры в Bobr
+        self.pipe = Pipe()
 
     def get_status(self):
         return self.status
@@ -108,37 +112,45 @@ class Game:
         text_rect.center = (WIN_WIDTH // 2, WIN_HEIGHT // 2)
         surface.blit(text, text_rect)
 
-def exit_game():
-    pygame.quit()
-    sys.exit()
+    def update(self):
+        self.bobr.update()
+        self.pipe.update()
+        self.bobr.check_collision(self.pipe)
 
-bobr = Bobr()
-pipe = Pipe()
-game = Game()
+    def draw(self, surface):
+        self.bobr.draw(surface)
+        self.pipe.draw(surface)
 
-def game_2():
-    pygame.init()
-    pygame.display.set_caption('Game2')
-    screen_surface = pygame.display.set_mode(DISPLAY)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                exit_game()
+class GameWindow:
+    def __init__(self):
+        pygame.init()
+        pygame.display.set_caption('Game2')
+        self.screen_surface = pygame.display.set_mode(DISPLAY)
+        self.game = Game()
 
-        if game.get_status():
-            bobr.update()
-            pipe.update()
-            bobr.check_collision(pipe)
+    def exit_game(self):
+        pygame.quit()
+        sys.exit()
 
-        screen_surface.fill(BACKGROUND_COLOR)
-        bobr.draw(screen_surface)
-        pipe.draw(screen_surface)
-        if not game.get_status():
-            game.end_title(screen_surface)
+    def run(self):
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.exit_game()
 
-        pygame.display.update()
-        Frames.tick(FPS)
+            if self.game.get_status():
+                self.game.update()
+
+            self.screen_surface.fill(BACKGROUND_COLOR)
+            self.game.draw(self.screen_surface)
+            if not self.game.get_status():
+                self.game.end_title(self.screen_surface)
+
+            pygame.display.update()
+            Frames.tick(FPS)
+
 
 if __name__ == '__main__':
-    game_2()
+    game_window = GameWindow()
+    game_window.run()

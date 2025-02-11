@@ -32,11 +32,11 @@ def start_game_1():
 
 
 def start_game_2():
-    game_2()
+    print("Запуск 2-ой игры")
 
 
 def start_game_3():
-    game_3()
+    print("Запуск 3-ей игры")
 
 
 def exit_game():
