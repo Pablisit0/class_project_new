@@ -2,14 +2,13 @@ import pygame
 from pygame import *
 import random
 import time
-
 from Blocks_physics import Platform
 from PlayerMovement import Player
 
-
 class Game_1:
-    def __init__(self):
-        pygame.init()  # Инициация PyGame
+    def __init__(self, exit_to_menu_callback, quit_callback):
+        self.exit_to_menu_callback = exit_to_menu_callback  # Функция для возврата в меню
+        self.quit_callback = quit_callback  # Функция для выхода из игры
         self.WIN_WIDTH = 800  # Ширина создаваемого окна
         self.WIN_HEIGHT = 640  # Высота
         self.DISPLAY = (self.WIN_WIDTH, self.WIN_HEIGHT)  # Группируем ширину и высоту в одну переменную
@@ -171,13 +170,18 @@ class Game_1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    self.quit_callback()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
                     if restart_button.collidepoint(mouse_pos):
-                        self.__init__()  # Перезапуск игры
+                        running = False
+                        self.__init__(self.exit_to_menu_callback, self.quit_callback)  # Перезапуск игры
                         self.run()
+                        return
                     if quit_button.collidepoint(mouse_pos):
-                        running = False  # Выход в главное меню (или завершение игры)
+                        running = False
+                        self.exit_to_menu_callback()  # Возвращаемся в меню
+                        return
 
     def run(self):
         self.load_level()  # Загружаем уровень
@@ -236,8 +240,3 @@ class meteor(pygame.sprite.Sprite):
         # Удаление объекта, если он ушел за границы экрана
         if self.rect.top > 640:
             self.kill()  # Убираем спрайт из игры
-
-
-if __name__ == "__main__":
-    game = Game_1()
-    game.run()
