@@ -1,83 +1,60 @@
 import pygame
-import sys
-from Game1 import Game_1, Coin, SpawnPoint, meteor
-from Game2 import game_2
-from Game3 import game_3
-from Button_file import Button
 
-# Инициализация Pygame
-pygame.init()
+class MainMenu:
+    def __init__(self, start_game_callback, quit_callback):
+        self.WIDTH, self.HEIGHT = 600, 600
+        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        pygame.display.set_caption("Главное меню")
+        self.start_game = start_game_callback
+        self.quit = quit_callback
 
-# Размеры экрана
-WIDTH, HEIGHT = 600, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Главное меню")
+        # Логотип
+        self.logo_image = pygame.image.load("logo_bobr_game.png")
+        self.logo_image = pygame.transform.scale(self.logo_image, (400, 200))
+        self.logo_rect = self.logo_image.get_rect(center=(self.WIDTH//2, 100))
 
-# Цвета
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (200, 200, 200)
-DARK_GRAY = (150, 150, 150)
+        # Кнопки
+        self.buttons = [
+            {"text": "Игра 1", "rect": pygame.Rect(200, 250, 200, 50)},
+            {"text": "Игра 2", "rect": pygame.Rect(200, 320, 200, 50)},
+            {"text": "Игра 3", "rect": pygame.Rect(200, 390, 200, 50)},
+            {"text": "Выход", "rect": pygame.Rect(200, 460, 200, 50)}
+        ]
 
-logo_image = pygame.image.load("logo_bobr_game.png")  # Путь к вашему логотипу (например, 'logo.png')
-logo_width = 400  # Новая ширина
-logo_height = int(logo_image.get_height() * (logo_width / logo_image.get_width()))  # Сохраняем пропорции
-logo_image = pygame.transform.scale(logo_image, (logo_width, logo_height))  # Масштабируем изображение
-logo_rect = logo_image.get_rect(center=(WIDTH // 2, 100))  # Размещаем логотип в центре по горизонтали и на 100 пикселей сверху
+    def is_button_clicked(self, button_text, mouse_pos):
+        for button in self.buttons:
+            if button["text"] == button_text and button["rect"].collidepoint(mouse_pos):
+                return True
+        return False
 
-# Функции для игр
-def start_game_1():
-    game_1 = Game_1()
-    game_1.run()
-
-
-def start_game_2():
-    print("Запуск 2-ой игры")
-
-
-def start_game_3():
-    print("Запуск 3-ей игры")
-
-
-def exit_game():
-    pygame.quit()
-    sys.exit()
-
-
-# Главная функция для отображения меню
-def main_menu():
-    # Создание кнопок
-    buttons = [
-        Button("Игра 1", 300, 180, 200, 50, start_game_1),
-        Button("Игра 2", 300, 250, 200, 50, start_game_2),
-        Button("Игра 3", 300, 320, 200, 50, start_game_3),
-        Button("Выход", 300, 390, 200, 50, exit_game)
-    ]
-
-    # Главный цикл меню
-    while True:
-        screen.fill(WHITE)
-
-        screen.blit(logo_image, logo_rect)
-
-        # Обработка событий
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                exit_game()
-            if event.type == pygame.MOUSEBUTTONDOWN: 
-                if event.button == 1:  # Левый клик мыши
-                    for button in buttons:
-                        if button.is_hovered(pygame.mouse.get_pos()):
-                            button.click()
-
-        # Отображаем кнопки
-        for button in buttons:
-            button.draw(screen)
-
-        # Отображаем информацию
+    def draw(self):
+        self.screen.fill((255, 255, 255))
+        self.screen.blit(self.logo_image, self.logo_rect)
+        for button in self.buttons:
+            pygame.draw.rect(self.screen, (200, 200, 200), button["rect"])
+            font = pygame.font.Font(None, 36)
+            text = font.render(button["text"], True, (0, 0, 0))
+            text_rect = text.get_rect(center=button["rect"].center)
+            self.screen.blit(text, text_rect)
         pygame.display.flip()
 
-
-# Запуск основного меню
-if __name__ == "__main__":
-    main_menu()
+    def run(self):
+        running = True
+        while running:
+            self.draw()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.quit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    if self.is_button_clicked("Игра 1", mouse_pos):
+                        self.start_game("game_1")
+                        running = False
+                    elif self.is_button_clicked("Игра 2", mouse_pos):
+                        self.start_game("game_2")
+                        running = False
+                    elif self.is_button_clicked("Игра 3", mouse_pos):
+                        self.start_game("game_3")
+                        running = False
+                    elif self.is_button_clicked("Выход", mouse_pos):
+                        self.quit()

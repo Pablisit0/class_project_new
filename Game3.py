@@ -2,8 +2,6 @@ import pygame
 import random
 import time
 from pygame import Surface, image, transform
-from Button_file import Button
-
 
 class Square:
     def __init__(self, x, y, width, height, cell_size, square_image):
@@ -21,9 +19,11 @@ class Square:
         screen.blit(self.image, (self.rect.x, self.rect.y))
 
 
-class Game:
-    def __init__(self):
+class Game_3:
+    def __init__(self, exit_to_menu_callback, quit_callback):
         pygame.init()
+        self.exit_to_menu_callback = exit_to_menu_callback  # Функция для возврата в меню
+        self.quit_callback = quit_callback  # Функция для выхода из игры
 
         self.screen_width = 600
         self.screen_height = 600
@@ -85,7 +85,7 @@ class Game:
     def update_spawn_interval(self):
         self.spawn_interval = 0.5 - self.score // 25 * 0.05
 
-    def game_loop(self):
+    def run(self):
         running = True
         while running:
             self.screen.fill(self.WHITE)
@@ -93,9 +93,14 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    self.quit_callback()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     self.handle_mouse_click(mouse_x, mouse_y)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:  # Выход в меню по нажатию ESC
+                        self.exit_to_menu_callback()
+                        return
 
             self.spawn_square()
             self.update_spawn_interval()
@@ -110,8 +115,3 @@ class Game:
             self.clock.tick(60)
 
         pygame.quit()
-
-
-if __name__ == "__main__":
-    game = Game()
-    game.game_loop()

@@ -91,7 +91,9 @@ class Pipe:
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, exit_to_menu_callback, quit_callback):
+        self.exit_to_menu_callback = exit_to_menu_callback  # Функция для возврата в меню
+        self.quit_callback = quit_callback  # Функция для выхода из игры
         self.status = True
         self.bobr = Bobr(self)  # Передаем ссылку на объект игры в Bobr
         self.pipe = Pipe()
@@ -103,7 +105,8 @@ class Game:
         self.status = False
 
     def end_title(self, surface):
-        Button("Заново", 200, WIN_HEIGHT // 2, 150, 50, init)
+        Button("Заново", 200, WIN_HEIGHT // 2, 150, 50, self.restart)
+        Button("Выход в меню", 200, WIN_HEIGHT // 2 + 70, 150, 50, self.exit_to_menu_callback)
         text_color = (254, 255, 137)
         bg_color = (48, 58, 82)
         font = pygame.font.Font('freesansbold.ttf', 32)
@@ -111,6 +114,10 @@ class Game:
         text_rect = text.get_rect()
         text_rect.center = (WIN_WIDTH // 2, WIN_HEIGHT // 2)
         surface.blit(text, text_rect)
+
+    def restart(self):
+        self.__init__(self.exit_to_menu_callback, self.quit_callback)
+        self.run()
 
     def update(self):
         self.bobr.update()
@@ -122,22 +129,18 @@ class Game:
         self.pipe.draw(surface)
 
 
-class GameWindow:
-    def __init__(self):
+class Game_2:
+    def __init__(self, exit_to_menu_callback, quit_callback):
         pygame.init()
         pygame.display.set_caption('Game2')
         self.screen_surface = pygame.display.set_mode(DISPLAY)
-        self.game = Game()
-
-    def exit_game(self):
-        pygame.quit()
-        sys.exit()
+        self.game = Game(exit_to_menu_callback, quit_callback)
 
     def run(self):
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    self.exit_game()
+                    self.game.quit_callback()
 
             if self.game.get_status():
                 self.game.update()
@@ -149,8 +152,3 @@ class GameWindow:
 
             pygame.display.update()
             Frames.tick(FPS)
-
-
-if __name__ == '__main__':
-    game_window = GameWindow()
-    game_window.run()
