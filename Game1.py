@@ -6,12 +6,11 @@ from Blocks_physics import Platform
 from PlayerMovement import Player
 
 class Game_1:
-    def __init__(self, exit_to_menu_callback, quit_callback):
-        self.exit_to_menu_callback = exit_to_menu_callback  # Функция для возврата в меню
-        self.quit_callback = quit_callback  # Функция для выхода из игры
-        self.WIN_WIDTH = 800  # Ширина создаваемого окна
-        self.WIN_HEIGHT = 640  # Высота
-        self.DISPLAY = (self.WIN_WIDTH, self.WIN_HEIGHT)  # Группируем ширину и высоту в одну переменную
+    def __init__(self, exit_callback, quit_callback):
+        pygame.init()
+        self.WIN_WIDTH = 800
+        self.WIN_HEIGHT = 640
+        self.DISPLAY = (self.WIN_WIDTH, self.WIN_HEIGHT)
         self.BACKGROUND_COLOR = "#000000"
         self.PLATFORM_WIDTH = 32
         self.PLATFORM_HEIGHT = 32
@@ -26,10 +25,10 @@ class Game_1:
         self.platforms = []
 
         # Окно игры
-        self.screen = pygame.display.set_mode(self.DISPLAY)  # Создаем окошко
-        pygame.display.set_caption("Game1")  # Пишем в шапку
-        self.bg = Surface((self.WIN_WIDTH, self.WIN_HEIGHT))  # Создание видимой поверхности
-        self.bg.fill(Color(self.BACKGROUND_COLOR))  # Заливаем поверхность сплошным цветом
+        self.screen = pygame.display.set_mode(self.DISPLAY)
+        pygame.display.set_caption("Game1")
+        self.bg = Surface((self.WIN_WIDTH, self.WIN_HEIGHT))
+        self.bg.fill(Color(self.BACKGROUND_COLOR))
 
         # Герой
         self.hero = Player(55, 55)
@@ -65,21 +64,30 @@ class Game_1:
             "-                   --  -",
             "-                       -",
             "-                       -",
-            "-------------------------"]
+            "-------------------------"
+        ]
 
         self.last_spawn_time = time.time()
         self.spawn_interval = 1  # Интервал спавна в секундах
 
+        # Таймер
+        self.start_time = time.time()  # Время начала уровня
+        self.timer_font = pygame.font.Font(None, 36)  # Шрифт для таймера
+
+        # Коллбеки
+        self.exit = exit_callback
+        self.quit = quit_callback
+
     def spawn_object(self):
-        spawn_point = random.choice(self.spawn_points)  # Выбор случайной точки спавна
+        spawn_point = random.choice(self.spawn_points)
         new_object = meteor('meteor.png', spawn_point.position)
-        self.entities.add(new_object)  # Добавляем объект в группу спрайтов
+        self.entities.add(new_object)
         return new_object
 
     def load_level(self):
-        x = y = 0  # начальные координаты
-        for row in self.level:  # вся строка
-            for col in row:  # каждый символ
+        x = y = 0
+        for row in self.level:
+            for col in row:
                 if col == "-":
                     pf = Platform(x, y)
                     self.entities.add(pf)
@@ -88,44 +96,50 @@ class Game_1:
                     coin = Coin(x, y)
                     self.entities.add(coin)
                     self.coins.append(coin)
-                x += self.PLATFORM_WIDTH  # блоки платформы ставятся на ширине блоков
-            y += self.PLATFORM_HEIGHT  # то же самое и с высотой
-            x = 0  # на каждой новой строчке начинаем с нуля
+                x += self.PLATFORM_WIDTH
+            y += self.PLATFORM_HEIGHT
+            x = 0
 
     def handle_collisions(self):
         for meteor in self.objects:
             if self.hero.rect.colliderect(meteor):
                 print("Game Over")
-                self.game_over()  # Показываем экран окончания игры
+                self.game_over()
                 return False
 
-        for coin in self.coins[:]:  # Используем копию списка, чтобы изменять оригинал
+        for coin in self.coins[:]:
             if self.hero.rect.colliderect(coin):
-                self.coins.remove(coin)  # Удаляем монетку
-                self.score += 1  # Увеличиваем счетчик монеток
+                self.coins.remove(coin)
+                self.score += 1
                 coin.kill()
-                if self.score == 4:
-                    print("You won!")
-                    self.game_over()  # Показываем экран окончания игры
+                if self.score == 4:  # Все монеты собраны
+                    self.you_won()  # Показываем экран победы
                     return False
 
         return True
 
     def update(self):
-        # Обновление объектов
         for o in self.objects:
             o.update()
 
     def draw(self):
-        self.screen.blit(self.bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
-        self.hero.update(self.left, self.right, self.up, self.platforms)  # передвижение
-        self.entities.draw(self.screen)  # отображение всего
+        self.screen.blit(self.bg, (0, 0))
+        self.hero.update(self.left, self.right, self.up, self.platforms)
+        self.entities.draw(self.screen)
+
+        # Отрисовка счета
         font = pygame.font.Font(None, 36)
-        text = font.render(f"Coins: {self.score}", True, (255, 255, 255))
-        self.screen.blit(text, (10, 5))
+        score_text = font.render(f"Coins: {self.score}", True, (255, 255, 255))
+        self.screen.blit(score_text, (10, 5))
+
+        # Отрисовка таймера
+        elapsed_time = int(time.time() - self.start_time)  # Время в секундах
+        timer_text = self.timer_font.render(f"Time: {elapsed_time}", True, (255, 255, 255))
+        timer_rect = timer_text.get_rect(bottomright=(self.WIN_WIDTH - 10, self.WIN_HEIGHT - 10))
+        self.screen.blit(timer_text, timer_rect)
 
     def handle_events(self):
-        for e in pygame.event.get():  # Обрабатываем события
+        for e in pygame.event.get():
             if e.type == QUIT:
                 return False
             if e.type == KEYDOWN:
@@ -135,7 +149,6 @@ class Game_1:
                     self.right = True
                 if e.key == K_UP:
                     self.up = True
-
             if e.type == KEYUP:
                 if e.key == K_RIGHT:
                     self.right = False
@@ -143,51 +156,56 @@ class Game_1:
                     self.left = False
                 if e.key == K_UP:
                     self.up = False
-
         return True
 
     def game_over(self):
+        self.show_end_screen("Game Over")
+
+    def you_won(self):
+        self.show_end_screen("You won!")
+
+    def show_end_screen(self, message):
         font = pygame.font.Font(None, 72)
-        text = font.render("Game Over", True, (255, 0, 0))
+        text = font.render(message, True, (255, 0, 0))
         restart_button = pygame.Rect(300, 300, 200, 50)
         quit_button = pygame.Rect(300, 400, 200, 50)
 
         running = True
         while running:
-            self.screen.fill((0, 0, 0))  # Заливаем экран черным цветом
-            self.screen.blit(text, (250, 150))  # Показываем надпись "Game Over"
+            self.screen.fill((0, 0, 0))
+            self.screen.blit(text, (250, 150))
 
-            pygame.draw.rect(self.screen, (0, 255, 0), restart_button)  # Кнопка "Повторить"
-            pygame.draw.rect(self.screen, (255, 0, 0), quit_button)  # Кнопка "Выйти"
+            pygame.draw.rect(self.screen, (0, 255, 0), restart_button)
+            pygame.draw.rect(self.screen, (255, 0, 0), quit_button)
 
             restart_text = pygame.font.Font(None, 36).render("Restart", True, (0, 0, 0))
             quit_text = pygame.font.Font(None, 36).render("Quit", True, (0, 0, 0))
             self.screen.blit(restart_text, (restart_button.x + 60, restart_button.y + 10))
             self.screen.blit(quit_text, (quit_button.x + 70, quit_button.y + 10))
 
-            pygame.display.update()  # Обновляем экран
+            pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    self.quit_callback()
+                    self.quit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
                     if restart_button.collidepoint(mouse_pos):
                         running = False
-                        self.__init__(self.exit_to_menu_callback, self.quit_callback)  # Перезапуск игры
+                        self.__init__(self.exit, self.quit)
                         self.run()
                         return
                     if quit_button.collidepoint(mouse_pos):
                         running = False
-                        self.exit_to_menu_callback()  # Возвращаемся в меню
+                        self.exit()
                         return
 
     def run(self):
-        self.load_level()  # Загружаем уровень
+        self.load_level()
         running = True
 
-        while running:  # Основной цикл программы
+        while running:
             pygame.time.Clock().tick(60)
 
             if not self.handle_events():
@@ -198,12 +216,12 @@ class Game_1:
                 self.last_spawn_time = time.time()
 
             if not self.handle_collisions():
-                running = False  # Остановка игры
+                running = False
 
             self.draw()
             self.update()
 
-            pygame.display.update()  # обновление и вывод всех изменений на экран
+            pygame.display.update()
 
 
 class Coin(pygame.sprite.Sprite):
@@ -218,7 +236,7 @@ class Coin(pygame.sprite.Sprite):
     def handle_collision(self, player):
         player.coin_count += 1
         print(f"Монета собрана! Всего монет: {player.coin_count}")
-        self.kill()  # Удаляем монету из игры
+        self.kill()
 
 
 class SpawnPoint:
@@ -232,11 +250,9 @@ class meteor(pygame.sprite.Sprite):
         self.image = image.load(image_path)
         self.rect = self.image.get_rect()
         self.rect.topleft = position
-        self.speed_y = 5
+        self.speed_y = 8
 
     def update(self):
-        # Обновление позиции: падение вниз
         self.rect.y += self.speed_y
-        # Удаление объекта, если он ушел за границы экрана
         if self.rect.top > 640:
-            self.kill()  # Убираем спрайт из игры
+            self.kill()

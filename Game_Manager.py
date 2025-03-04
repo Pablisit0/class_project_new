@@ -27,7 +27,8 @@ class GameManager:
         self.current_state = game_name
 
     def exit_to_menu(self):
-        self.active_game = None
+        if self.active_game:
+            self.active_game = None
         self.current_state = self.STATE_MENU
         self.main_menu = MainMenu(self.start_game, self.quit)
 
