@@ -91,6 +91,11 @@ class Game_3:
         text_rect = text.get_rect(center=(300, 200))
         self.screen.blit(text, text_rect)
 
+        # Финальный счет
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f"Финальный счет: {self.score}", True, (0, 0, 0))
+        self.screen.blit(text, (250, 250))
+
         # Кнопка "Заново"
         restart_btn = pygame.Rect(200, 300, 200, 50)
         pygame.draw.rect(self.screen, (0, 200, 0), restart_btn)
