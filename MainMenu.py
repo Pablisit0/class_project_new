@@ -16,10 +16,10 @@ class MainMenu:
 
 
         self.buttons = [
-            BeautifulButton("Игра 1", 200, 250, 200, 50),
-            BeautifulButton("Игра 2", 200, 320, 200, 50),
-            BeautifulButton("Игра 3", 200, 390, 200, 50),
-            BeautifulButton("Выход", 200, 460, 200, 50)
+            BeautifulButton("Game 1", 200, 250, 200, 50),
+            BeautifulButton("Game 2", 200, 320, 200, 50),
+            BeautifulButton("Game 3", 200, 390, 200, 50),
+            BeautifulButton("Quit", 200, 460, 200, 50)
         ]
 
     def draw(self):
@@ -48,13 +48,13 @@ class MainMenu:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.check_click(mouse_pos):
-                            if button.text == "Игра 1":
+                            if button.text == "Game 1":
                                 self.start_game("game_1")
                                 running = False
-                            elif button.text == "Игра 2":
+                            elif button.text == "Game 2":
                                 self.start_game("game_2")
                                 running = False
-                            elif button.text == "Игра 3":
+                            elif button.text == "Game 3":
                                 self.start_game("game_3")
                                 running = False
                             elif button.text == "Выход":

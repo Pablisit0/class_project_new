@@ -74,7 +74,7 @@ class Game_3:
 
     def draw_score(self):
         font = pygame.font.SysFont('Arial', 36, bold=True)
-        text = font.render(f"Счет: {self.score}", True, (50, 50, 50))
+        text = font.render(f"Score: {self.score}", True, (50, 50, 50))
         self.screen.blit(text, (20, 20))
 
     def show_end_screen(self):
@@ -86,16 +86,16 @@ class Game_3:
 
 
         font = pygame.font.SysFont('Arial', 72, bold=True)
-        text = font.render("Игра окончена!", True, (255, 100, 100))
+        text = font.render("Game over", True, (255, 100, 100))
         text_rect = text.get_rect(center=(300, 150))
 
 
-        score_text = font.render(f"Счет: {self.score}", True, (255, 255, 255))
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
         score_rect = score_text.get_rect(center=(300, 250))
 
 
-        restart_btn = BeautifulButton("Заново", 150, 350, 300, 60)
-        menu_btn = BeautifulButton("Выход", 150, 450, 300, 60)
+        restart_btn = BeautifulButton("Restart", 150, 350, 300, 60)
+        menu_btn = BeautifulButton("Quit", 150, 450, 300, 60)
 
         while self.in_end_screen:
             mouse_pos = pygame.mouse.get_pos()

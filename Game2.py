@@ -101,7 +101,7 @@ class Game_2:
         score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
         score_rect = score_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3 + 70))
         restart_btn = BeautifulButton("Restart", 50, 350, 300, 50)
-        menu_btn = BeautifulButton("Menu", 50, 420, 300, 50)
+        menu_btn = BeautifulButton("Quit", 50, 420, 300, 50)
         self.in_end_screen = True
 
         while self.in_end_screen:
