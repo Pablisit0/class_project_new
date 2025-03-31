@@ -5,62 +5,62 @@ WIDTH = 40
 HEIGHT = 70
 COLOR = "#888888"
 JUMP_POWER = 10
-GRAVITY = 0.35 # Сила, которая будет тянуть нас вниз
+GRAVITY = 0.35
 
 class Player(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
         self.coin_count = 0
-        self.xvel = 0  # Скорость перемещения. 0 - стоять на месте
-        self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
+        self.xvel = 0
+        self.startX = x
         self.startY = y
         self.image = Surface((WIDTH, HEIGHT))
         self.image = image.load("bobr_game.png")
         self.image = transform.scale(self.image, (WIDTH, HEIGHT))
-        self.rect = Rect(x, y, WIDTH, HEIGHT)  # прямоугольный объект
-        self.yvel = 0  # скорость вертикального перемещения
-        self.onGround = False  # На земле ли я?
+        self.rect = Rect(x, y, WIDTH, HEIGHT)
+        self.yvel = 0
+        self.onGround = False
 
     def update(self, left, right, up, platforms):
         if up:
-            if self.onGround:  # прыгаем, только когда можем оттолкнуться от земли
+            if self.onGround:
                 self.yvel = -JUMP_POWER
 
         if left:
-            self.xvel = -MOVE_SPEED  # Лево = x- n
+            self.xvel = -MOVE_SPEED
 
         if right:
-            self.xvel = MOVE_SPEED  # Право = x + n
+            self.xvel = MOVE_SPEED
 
-        if not (left or right):  # стоим, когда нет указаний идти
+        if not (left or right):
             self.xvel = 0
 
         if not self.onGround:
             self.yvel += GRAVITY
 
-        self.onGround = False  # Мы не знаем, когда мы на земле((
+        self.onGround = False
 
         self.rect.y += self.yvel
         self.collide(0, self.yvel, platforms)
 
-        self.rect.x += self.xvel  # переносим свои положение на xvel
+        self.rect.x += self.xvel
         self.collide(self.xvel, 0, platforms)
 
     def collide(self, xvel, yvel, platforms):
         for p in platforms:
-            if sprite.collide_rect(self, p):  # если есть пересечение платформы с игроком
+            if sprite.collide_rect(self, p):
 
-                if xvel > 0:  # если движется вправо
-                    self.rect.right = p.rect.left  # то не движется вправо
+                if xvel > 0:
+                    self.rect.right = p.rect.left
 
-                if xvel < 0:  # если движется влево
-                    self.rect.left = p.rect.right  # то не движется влево
+                if xvel < 0:
+                    self.rect.left = p.rect.right
 
-                if yvel > 0:  # если падает вниз
-                    self.rect.bottom = p.rect.top  # то не падает вниз
-                    self.onGround = True  # и становится на что-то твердое
-                    self.yvel = 0  # и энергия падения пропадает
+                if yvel > 0:
+                    self.rect.bottom = p.rect.top
+                    self.onGround = True
+                    self.yvel = 0
 
-                if yvel < 0:  # если движется вверх
-                    self.rect.top = p.rect.bottom  # то не движется вверх
-                    self.yvel = 0  # и энергия прыжка пропадает
+                if yvel < 0:
+                    self.rect.top = p.rect.bottom
+                    self.yvel = 0

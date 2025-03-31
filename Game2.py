@@ -2,13 +2,14 @@ import pygame
 from pygame import *
 from random import randint
 import sys
+from Button_file import BeautifulButton
 
 FPS = 60
 Frames = pygame.time.Clock()
 WIDTH = 40
 HEIGHT = 70
-WIN_WIDTH = 400  # Ширина окна
-WIN_HEIGHT = 640  # Высота окна
+WIN_WIDTH = 400
+WIN_HEIGHT = 640
 DISPLAY = (WIN_WIDTH, WIN_HEIGHT)
 BACKGROUND_COLOR = (70, 195, 219)
 
@@ -88,35 +89,96 @@ class Game_2:
         self.screen = pygame.display.set_mode(DISPLAY)
         pygame.display.set_caption('Game 2')
         self.exit = exit_callback
-        self.quit = quit_callback
-        self.bobr = Bobr()
-        self.pipe = Pipe()
-        self.status = True
+        self.quit_game = quit_callback
+        self.clock = pygame.time.Clock()
 
-    def run(self):
+        self.reset_game()
+
+    def reset_game(self):
+        self.bobr = Bobr()
+        self.pipes = [Pipe()]
+        self.score = 0
+        self.running = True
+        self.should_exit = False
+
+    def show_game_over(self):
+        overlay = Surface(DISPLAY, SRCALPHA)
+        overlay.fill((0, 0, 0, 128))
+
+        font = pygame.font.Font(None, 72)
+        text = font.render("Game Over", True, (255, 0, 0))
+        text_rect = text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3))
+
+        restart_btn = BeautifulButton("Restart", 100, 300, 200, 50)
+        menu_btn = BeautifulButton("Menu", 100, 380, 200, 50)
+
         while True:
+            mouse_pos = pygame.mouse.get_pos()
+
+            # Отрисовка игры на заднем плане
+            self.screen.fill(BACKGROUND_COLOR)
+            self.bobr.draw(self.screen)
+            for pipe in self.pipes:
+                pipe.draw(self.screen)
+
+            # Затемнение и элементы интерфейса
+            self.screen.blit(overlay, (0, 0))
+            self.screen.blit(text, text_rect)
+            restart_btn.draw(self.screen)
+            menu_btn.draw(self.screen)
+
+            restart_btn.check_hover(mouse_pos)
+            menu_btn.check_hover(mouse_pos)
+
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    self.quit()
-                if event.type == KEYDOWN:
-                    if event.key == K_ESCAPE:
-                        self.exit()
+                    self.quit_game()
+                if event.type == MOUSEBUTTONDOWN:
+                    if restart_btn.check_click(mouse_pos):
+                        self.reset_game()
+                        return
+                    if menu_btn.check_click(mouse_pos):
+                        self.should_exit = True
                         return
 
-            if self.status:
+            pygame.display.update()
+            self.clock.tick(FPS)
+
+    def run(self):
+        while not self.should_exit:
+            self.clock.tick(FPS)
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.quit_game()
+                if event.type == KEYDOWN:
+                    if event.key == K_SPACE and self.running:
+                        self.bobr.update()
+                    if event.key == K_ESCAPE:
+                        self.should_exit = True
+
+            if self.running:
                 self.bobr.update()
-                self.pipe.update()
-                if self.bobr.check_collision(self.pipe):
-                    self.status = False
+                for pipe in self.pipes:
+                    pipe.update()
+                    if pipe.rect_top.right < 0:
+                        self.pipes.remove(pipe)
+                        self.pipes.append(Pipe())
+                        self.score += 1
+
+
+                if self.bobr.check_collision(self.pipes[0]):
+                    self.running = False
+                    self.show_game_over()
+
 
             self.screen.fill(BACKGROUND_COLOR)
             self.bobr.draw(self.screen)
-            self.pipe.draw(self.screen)
-
-            if not self.status:
-                font = pygame.font.Font(None, 72)
-                text = font.render("Game Over", True, (255, 0, 0))
-                self.screen.blit(text, (WIN_WIDTH // 2 - 140, WIN_HEIGHT // 2 - 50))
+            for pipe in self.pipes:
+                pipe.draw(self.screen)
 
             pygame.display.update()
-            Frames.tick(FPS)
+
+
+        if self.should_exit:
+            self.exit()

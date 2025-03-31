@@ -4,6 +4,7 @@ import random
 import time
 from Blocks_physics import Platform
 from PlayerMovement import Player
+from Button_file import BeautifulButton
 
 class Game_1:
     def __init__(self, exit_callback, quit_callback):
@@ -24,20 +25,17 @@ class Game_1:
         self.coins = []
         self.platforms = []
 
-        # Окно игры
         self.screen = pygame.display.set_mode(self.DISPLAY)
         pygame.display.set_caption("Game1")
         self.bg = Surface((self.WIN_WIDTH, self.WIN_HEIGHT))
         self.bg.fill(Color(self.BACKGROUND_COLOR))
 
-        # Герой
         self.hero = Player(55, 55)
         self.left = self.right = False
         self.up = False
 
         self.entities.add(self.hero)
 
-        # Точки спавна
         self.spawn_points = [
             SpawnPoint(100, -75),
             SpawnPoint(400, -75),
@@ -68,13 +66,11 @@ class Game_1:
         ]
 
         self.last_spawn_time = time.time()
-        self.spawn_interval = 1  # Интервал спавна в секундах
+        self.spawn_interval = 1
 
-        # Таймер
-        self.start_time = time.time()  # Время начала уровня
-        self.timer_font = pygame.font.Font(None, 36)  # Шрифт для таймера
+        self.start_time = time.time()
+        self.timer_font = pygame.font.Font(None, 36)
 
-        # Коллбеки
         self.exit = exit_callback
         self.quit = quit_callback
 
@@ -112,8 +108,8 @@ class Game_1:
                 self.coins.remove(coin)
                 self.score += 1
                 coin.kill()
-                if self.score == 4:  # Все монеты собраны
-                    self.you_won()  # Показываем экран победы
+                if self.score == 4:
+                    self.you_won()
                     return False
 
         return True
@@ -127,12 +123,12 @@ class Game_1:
         self.hero.update(self.left, self.right, self.up, self.platforms)
         self.entities.draw(self.screen)
 
-        # Отрисовка счета
+
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Coins: {self.score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 5))
 
-        # Отрисовка таймера
+
         elapsed_time = int(time.time() - self.start_time)  # Время в секундах
         timer_text = self.timer_font.render(f"Time: {elapsed_time}", True, (255, 255, 255))
         timer_rect = timer_text.get_rect(bottomright=(self.WIN_WIDTH - 10, self.WIN_HEIGHT - 10))
@@ -162,44 +158,47 @@ class Game_1:
         self.show_end_screen("Game Over")
 
     def you_won(self):
-        self.show_end_screen("You won!")
+        self.show_end_screen("You Won!")
 
     def show_end_screen(self, message):
-        font = pygame.font.Font(None, 72)
-        text = font.render(message, True, (255, 0, 0))
-        restart_button = pygame.Rect(300, 300, 200, 50)
-        quit_button = pygame.Rect(300, 400, 200, 50)
+        # Белый фон
+        self.screen.fill((255, 255, 255))
+
+
+        font = pygame.font.Font(None, 72)  # Крупный шрифт
+        text = font.render(message, True, (255, 0, 0))  # Красный цвет
+        text_rect = text.get_rect(center=(self.WIN_WIDTH // 2, self.WIN_HEIGHT // 3))
+        self.screen.blit(text, text_rect)
+
+
+        restart_button = BeautifulButton("Restart", 300, 350, 200, 50)
+        quit_button = BeautifulButton("Quit", 300, 420, 200, 50)
 
         running = True
         while running:
-            self.screen.fill((0, 0, 0))
-            self.screen.blit(text, (250, 150))
+            mouse_pos = pygame.mouse.get_pos()
 
-            pygame.draw.rect(self.screen, (0, 255, 0), restart_button)
-            pygame.draw.rect(self.screen, (255, 0, 0), quit_button)
 
-            restart_text = pygame.font.Font(None, 36).render("Restart", True, (0, 0, 0))
-            quit_text = pygame.font.Font(None, 36).render("Quit", True, (0, 0, 0))
-            self.screen.blit(restart_text, (restart_button.x + 60, restart_button.y + 10))
-            self.screen.blit(quit_text, (quit_button.x + 70, quit_button.y + 10))
+            restart_button.draw(self.screen)
+            quit_button.draw(self.screen)
 
-            pygame.display.update()
+
+            restart_button.check_hover(mouse_pos)
+            quit_button.check_hover(mouse_pos)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
                     self.quit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    if restart_button.collidepoint(mouse_pos):
-                        running = False
+                    if restart_button.check_click(mouse_pos):
                         self.__init__(self.exit, self.quit)
                         self.run()
                         return
-                    if quit_button.collidepoint(mouse_pos):
-                        running = False
+                    if quit_button.check_click(mouse_pos):
                         self.exit()
                         return
+
+            pygame.display.update()
 
     def run(self):
         self.load_level()

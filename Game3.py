@@ -2,6 +2,7 @@ import pygame
 import random
 import time
 from pygame import Surface, image, transform
+from Button_file import BeautifulButton
 
 
 class Square:
@@ -27,8 +28,8 @@ class Game_3:
         pygame.init()
         self.screen = pygame.display.set_mode((600, 600))
         pygame.display.set_caption("Game 3")
-        self.exit = exit_callback  # Коллбек для возврата в меню
-        self.quit = quit_callback  # Коллбек для выхода из игры
+        self.exit_callback = exit_callback
+        self.quit_callback = quit_callback
         self.square_image = image.load("bobr_game.png")
         self.reset_game()
 
@@ -39,15 +40,15 @@ class Game_3:
         self.score = 0
         self.last_spawn_time = time.time()
         self.spawn_interval = 0.5
-        self.game_over = False
-        self.show_game_over_screen = False  # Флаг для отображения экрана завершения игры
+        self.game_active = True
+        self.in_end_screen = False
 
     def draw_grid(self):
         for x in range(1, self.grid_size):
-            pygame.draw.line(self.screen, (0, 0, 0),
+            pygame.draw.line(self.screen, (200, 200, 200),
                              (x * self.cell_size, 0),
                              (x * self.cell_size, 600), 2)
-            pygame.draw.line(self.screen, (0, 0, 0),
+            pygame.draw.line(self.screen, (200, 200, 200),
                              (0, x * self.cell_size),
                              (600, x * self.cell_size), 2)
 
@@ -60,96 +61,112 @@ class Game_3:
 
             if available:
                 x, y = random.choice(available)
-                self.squares.append(Square(x, y, 70, 90,
-                                           self.cell_size,
-                                           self.square_image))
+                self.squares.append(Square(x, y, 70, 90, self.cell_size, self.square_image))
             else:
                 self.game_over = True
-                self.show_game_over_screen = True  # Показываем экран завершения игры
-
-    def update_spawn_interval(self):
-        self.spawn_interval = 0.5 - self.score // 25 * 0.05
+                self.show_game_over_screen = True
 
     def handle_click(self, mouse_x, mouse_y):
-        grid_x = mouse_x // self.cell_size
-        grid_y = mouse_y // self.cell_size
-
         for square in self.squares[:]:
             if square.rect.collidepoint(mouse_x, mouse_y):
                 self.squares.remove(square)
                 self.score += 1
 
     def draw_score(self):
-        font = pygame.font.SysFont(None, 36)
-        text = font.render(f"Счет: {self.score}", True, (0, 0, 0))
-        self.screen.blit(text, (10, 10))
+        font = pygame.font.SysFont('Arial', 36, bold=True)
+        text = font.render(f"Счет: {self.score}", True, (50, 50, 50))
+        self.screen.blit(text, (20, 20))
 
-    def draw_game_over_screen(self):
-        self.screen.fill((255, 255, 255))
-        font = pygame.font.Font(None, 72)
-        text = font.render("Игра окончена!", True, (255, 0, 0))
-        text_rect = text.get_rect(center=(300, 200))
-        self.screen.blit(text, text_rect)
+    def show_end_screen(self):
+        self.in_end_screen = True
 
-        # Финальный счет
-        font = pygame.font.SysFont(None, 36)
-        text = font.render(f"Финальный счет: {self.score}", True, (0, 0, 0))
-        self.screen.blit(text, (250, 250))
 
-        # Кнопка "Заново"
-        restart_btn = pygame.Rect(200, 300, 200, 50)
-        pygame.draw.rect(self.screen, (0, 200, 0), restart_btn)
-        text = font.render("Заново", True, (0, 0, 0))
-        self.screen.blit(text, (210, 303))
+        overlay = Surface((600, 600), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
 
-        # Кнопка "Выход"
-        quit_btn = pygame.Rect(200, 370, 200, 50)
-        pygame.draw.rect(self.screen, (200, 0, 0), quit_btn)
-        text = font.render("Выход", True, (0, 0, 0))
-        self.screen.blit(text, (210, 373))
 
-        pygame.display.flip()
+        font = pygame.font.SysFont('Arial', 72, bold=True)
+        text = font.render("Игра окончена!", True, (255, 100, 100))
+        text_rect = text.get_rect(center=(300, 150))
 
-        # Возвращаем координаты кнопок для обработки кликов
-        return restart_btn, quit_btn
 
-    def run(self):
-        running = True
-        while running:
-            # Обработка событий
+        score_text = font.render(f"Счет: {self.score}", True, (255, 255, 255))
+        score_rect = score_text.get_rect(center=(300, 250))
+
+
+        restart_btn = BeautifulButton("Заново", 150, 350, 300, 60)
+        menu_btn = BeautifulButton("Выход", 150, 450, 300, 60)
+
+        while self.in_end_screen:
+            mouse_pos = pygame.mouse.get_pos()
+
+
+            self.screen.fill((240, 240, 240))
+            self.draw_grid()
+            for square in self.squares:
+                square.draw(self.screen)
+
+
+            self.screen.blit(overlay, (0, 0))
+            self.screen.blit(text, text_rect)
+            self.screen.blit(score_text, score_rect)
+            restart_btn.draw(self.screen)
+            menu_btn.draw(self.screen)
+
+
+            restart_btn.check_hover(mouse_pos)
+            menu_btn.check_hover(mouse_pos)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.quit()
+                    self.quit_callback()
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.show_game_over_screen:
-                        # Обработка кликов на экране завершения игры
-                        mouse_pos = pygame.mouse.get_pos()
-                        restart_btn, quit_btn = self.draw_game_over_screen()
-                        if restart_btn.collidepoint(mouse_pos):
-                            self.reset_game()
-                            self.show_game_over_screen = False
-                        elif quit_btn.collidepoint(mouse_pos):
-                            self.exit()
-                            running = False
-                    else:
-                        # Обработка кликов во время игры
-                        self.handle_click(*pygame.mouse.get_pos())
+                    if restart_btn.check_click(mouse_pos):
+                        self.reset_game()
+                        self.in_end_screen = False
+                        return
+
+                    if menu_btn.check_click(mouse_pos):
+                        self.in_end_screen = False
+                        self.game_active = False
+                        self.exit_callback()
+                        return
+
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
+
+    def run(self):
+        self.game_active = True
+
+        while self.game_active:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.quit_callback()
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.exit()  # Возврат в главное меню
-                        running = False  # Выход из игрового цикла
+                        self.game_active = False
+                        self.exit_callback()
 
-            # Игровая логика
-            if not self.show_game_over_screen:
+                if event.type == pygame.MOUSEBUTTONDOWN and not self.in_end_screen:
+                    self.handle_click(*pygame.mouse.get_pos())
+
+
+            if not self.in_end_screen:
                 self.spawn_square()
-                self.update_spawn_interval()
-                self.screen.fill((255, 255, 255))
+
+
+                self.screen.fill((240, 240, 240))
                 self.draw_grid()
                 for square in self.squares:
                     square.draw(self.screen)
                 self.draw_score()
-                pygame.display.update()
-                pygame.time.Clock().tick(60)
-            else:
-                # Отрисовка экрана завершения игры
-                self.draw_game_over_screen()
+
+
+                if len(self.squares) >= 9:  # Все клетки заполнены
+                    self.in_end_screen = True
+                    self.show_end_screen()
+
+            pygame.display.update()
+            pygame.time.Clock().tick(60)
