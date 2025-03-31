@@ -1,184 +1,185 @@
 import pygame
-from pygame import *
-from random import randint
 import sys
+import random
+from pygame import *
 from Button_file import BeautifulButton
 
-FPS = 60
-Frames = pygame.time.Clock()
-WIDTH = 40
-HEIGHT = 70
 WIN_WIDTH = 400
-WIN_HEIGHT = 640
-DISPLAY = (WIN_WIDTH, WIN_HEIGHT)
-BACKGROUND_COLOR = (70, 195, 219)
+WIN_HEIGHT = 600
+PIPE_GAP = 150
+PIPE_FREQUENCY = 1500
+GROUND_HEIGHT = 100
+BIRD_WIDTH = 40
+BIRD_HEIGHT = 30
+PIPE_WIDTH = 70
 
-class Bobr:
+
+class Bird:
     def __init__(self):
-        self.image = pygame.image.load("bobr_game.png")
-        self.image = transform.scale(self.image, (WIDTH, HEIGHT))
-        self.rect = self.image.get_rect()
-        self.rect.top = WIDTH / 2 - self.rect.height / 2
-        self.rect.left = 20
-        self.velocity = 1
-        self.gravity = 0.2
-
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-
-    def key_press(self):
-        pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[K_SPACE]:
-            self.velocity = -5
-
-    def check_collision(self, pipe):
-        if ((pipe.rect_top.left <= self.rect.right and pipe.rect_top.bottom >= self.rect.top)
-                or (pipe.rect_bottom.left <= self.rect.right and pipe.rect_bottom.top <= self.rect.bottom)
-                or (self.rect.bottom >= WIN_HEIGHT) or (self.rect.bottom <= 0)):
-            return True
-        return False
+        self.x = 100
+        self.y = WIN_HEIGHT // 2
+        self.velocity = 0
+        self.gravity = 0.5
+        self.jump_strength = -10
+        self.image = pygame.image.load("bobr_game.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (BIRD_WIDTH, BIRD_HEIGHT))
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
     def update(self):
-        self.rect.move_ip(0, self.velocity)
         self.velocity += self.gravity
-        self.key_press()
+        self.y += self.velocity
+        self.rect.y = self.y
+
+    def jump(self):
+        self.velocity = self.jump_strength
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
 
 class Pipe:
     def __init__(self):
-        self.width = 50
-        self.height = 200
-        self.speed = -2
-        # Верхнее препятствие
-        self.image_top = pygame.image.load('pipe.png')
-        self.image_top = pygame.transform.rotate(self.image_top, 180)
-        self.image_top = pygame.transform.smoothscale(self.image_top, (self.width, self.height))
-        self.rect_top = self.image_top.get_rect()
-        self.rect_top.top = -10
-        self.rect_top.right = WIN_WIDTH + self.width
-        # Нижнее препятствие
-        self.image_bottom = pygame.image.load('pipe.png')
-        self.image_bottom = pygame.transform.smoothscale(self.image_bottom, (self.width, self.height))
-        self.rect_bottom = self.image_bottom.get_rect()
-        self.rect_bottom.bottom = WIN_HEIGHT + 10
-        self.rect_bottom.right = WIN_WIDTH + self.width
-
-    def random_height(self):
-        return randint(200, 240)
+        self.x = WIN_WIDTH
+        self.height = random.randint(100, WIN_HEIGHT - GROUND_HEIGHT - PIPE_GAP - 100)
+        self.pipe_top_img = pygame.image.load("pipe_bottom.png").convert_alpha()
+        self.pipe_bottom_img = pygame.image.load("pipe.png").convert_alpha()
+        self.pipe_top_img = pygame.transform.scale(self.pipe_top_img, (PIPE_WIDTH, self.height))
+        self.pipe_bottom_img = pygame.transform.scale(self.pipe_bottom_img,
+                                                      (PIPE_WIDTH, WIN_HEIGHT - self.height - PIPE_GAP))
+        self.top_rect = self.pipe_top_img.get_rect(topleft=(self.x, 0))
+        self.bottom_rect = self.pipe_bottom_img.get_rect(topleft=(self.x, self.height + PIPE_GAP))
+        self.passed = False
+        self.speed = 3
 
     def update(self):
-        self.rect_top.move_ip(self.speed, 0)
-        self.rect_bottom.move_ip(self.speed, 0)
-        if self.rect_top.right < 0:
-            self.image_top = pygame.transform.smoothscale(self.image_top, (self.width, self.random_height()))
-            self.rect_top = self.image_top.get_rect()
-            self.rect_top.right = WIN_WIDTH + self.width
-            self.image_bottom = pygame.transform.smoothscale(self.image_bottom, (self.width, self.random_height()))
-            self.rect_bottom = self.image_bottom.get_rect()
-            self.rect_bottom.bottom = WIN_HEIGHT + 10
-            self.rect_bottom.right = WIN_WIDTH + self.width
+        self.x -= self.speed
+        self.top_rect.x = self.x
+        self.bottom_rect.x = self.x
 
-    def draw(self, surface):
-        surface.blit(self.image_top, self.rect_top)
-        surface.blit(self.image_bottom, self.rect_bottom)
+    def draw(self, screen):
+        screen.blit(self.pipe_top_img, self.top_rect)
+        screen.blit(self.pipe_bottom_img, self.bottom_rect)
 
 
 class Game_2:
     def __init__(self, exit_callback, quit_callback):
         pygame.init()
-        self.screen = pygame.display.set_mode(DISPLAY)
-        pygame.display.set_caption('Game 2')
-        self.exit = exit_callback
-        self.quit_game = quit_callback
+        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        pygame.display.set_caption("Flappy Bird")
         self.clock = pygame.time.Clock()
-
+        self.font = pygame.font.SysFont('Arial', 30)
+        self.exit_callback = exit_callback
+        self.quit_callback = quit_callback
         self.reset_game()
 
     def reset_game(self):
-        self.bobr = Bobr()
-        self.pipes = [Pipe()]
+        self.bird = Bird()
+        self.pipes = []
         self.score = 0
-        self.running = True
-        self.should_exit = False
+        self.last_pipe = pygame.time.get_ticks()
+        self.game_active = True
+        self.in_end_screen = False
+        self.game_started = False
 
-    def show_game_over(self):
-        overlay = Surface(DISPLAY, SRCALPHA)
-        overlay.fill((0, 0, 0, 128))
+    def check_collisions(self):
+        if self.bird.rect.bottom >= WIN_HEIGHT - GROUND_HEIGHT:
+            return True
+        if self.bird.rect.top <= 0:
+            return True
+        for pipe in self.pipes:
+            if (self.bird.rect.colliderect(pipe.top_rect) or
+                    self.bird.rect.colliderect(pipe.bottom_rect)):
+                return True
+        return False
 
-        font = pygame.font.Font(None, 72)
-        text = font.render("Game Over", True, (255, 0, 0))
-        text_rect = text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3))
+    def show_end_screen(self):
+        overlay = Surface((WIN_WIDTH, WIN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        font_large = pygame.font.SysFont('Arial', 50, bold=True)
+        game_over_text = font_large.render("Game Over", True, (255, 100, 100))
+        game_over_rect = game_over_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3))
+        score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
+        score_rect = score_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3 + 70))
+        restart_btn = BeautifulButton("Restart", 50, 350, 300, 50)
+        menu_btn = BeautifulButton("Menu", 50, 420, 300, 50)
+        self.in_end_screen = True
 
-        restart_btn = BeautifulButton("Restart", 100, 300, 200, 50)
-        menu_btn = BeautifulButton("Menu", 100, 380, 200, 50)
-
-        while True:
+        while self.in_end_screen:
             mouse_pos = pygame.mouse.get_pos()
-
-            # Отрисовка игры на заднем плане
-            self.screen.fill(BACKGROUND_COLOR)
-            self.bobr.draw(self.screen)
+            self.screen.fill((135, 206, 235))
             for pipe in self.pipes:
                 pipe.draw(self.screen)
-
-            # Затемнение и элементы интерфейса
+            self.bird.draw(self.screen)
+            pygame.draw.rect(self.screen, (139, 69, 19), (0, WIN_HEIGHT - GROUND_HEIGHT, WIN_WIDTH, GROUND_HEIGHT))
             self.screen.blit(overlay, (0, 0))
-            self.screen.blit(text, text_rect)
+            self.screen.blit(game_over_text, game_over_rect)
+            self.screen.blit(score_text, score_rect)
             restart_btn.draw(self.screen)
             menu_btn.draw(self.screen)
-
             restart_btn.check_hover(mouse_pos)
             menu_btn.check_hover(mouse_pos)
 
             for event in pygame.event.get():
-                if event.type == QUIT:
-                    self.quit_game()
-                if event.type == MOUSEBUTTONDOWN:
+                if event.type == pygame.QUIT:
+                    self.quit_callback()
+                if event.type == pygame.MOUSEBUTTONDOWN:
                     if restart_btn.check_click(mouse_pos):
                         self.reset_game()
+                        self.in_end_screen = False
                         return
                     if menu_btn.check_click(mouse_pos):
-                        self.should_exit = True
+                        self.in_end_screen = False
+                        self.game_active = False
+                        self.exit_callback()
                         return
 
             pygame.display.update()
-            self.clock.tick(FPS)
+            self.clock.tick(60)
 
     def run(self):
-        while not self.should_exit:
-            self.clock.tick(FPS)
+        while self.game_active:
+            current_time = pygame.time.get_ticks()
 
             for event in pygame.event.get():
-                if event.type == QUIT:
-                    self.quit_game()
-                if event.type == KEYDOWN:
-                    if event.key == K_SPACE and self.running:
-                        self.bobr.update()
-                    if event.key == K_ESCAPE:
-                        self.should_exit = True
+                if event.type == pygame.QUIT:
+                    self.quit_callback()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.bird.jump()
+                        self.game_started = True
+                    if event.key == pygame.K_ESCAPE:
+                        self.game_active = False
+                        self.exit_callback()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.bird.jump()
+                    self.game_started = True
 
-            if self.running:
-                self.bobr.update()
+            if not self.in_end_screen:
+                if current_time - self.last_pipe > PIPE_FREQUENCY and self.game_started:
+                    self.pipes.append(Pipe())
+                    self.last_pipe = current_time
+
+                self.bird.update()
                 for pipe in self.pipes:
                     pipe.update()
-                    if pipe.rect_top.right < 0:
-                        self.pipes.remove(pipe)
-                        self.pipes.append(Pipe())
+
+                self.pipes = [pipe for pipe in self.pipes if pipe.x > -PIPE_WIDTH]
+
+                if self.check_collisions():
+                    self.in_end_screen = True
+                    self.show_end_screen()
+
+                for pipe in self.pipes:
+                    if pipe.x + PIPE_WIDTH < self.bird.x and not pipe.passed:
+                        pipe.passed = True
                         self.score += 1
 
-
-                if self.bobr.check_collision(self.pipes[0]):
-                    self.running = False
-                    self.show_game_over()
-
-
-            self.screen.fill(BACKGROUND_COLOR)
-            self.bobr.draw(self.screen)
+            self.screen.fill((135, 206, 235))
             for pipe in self.pipes:
                 pipe.draw(self.screen)
-
+            self.bird.draw(self.screen)
+            pygame.draw.rect(self.screen, (139, 69, 19), (0, WIN_HEIGHT - GROUND_HEIGHT, WIN_WIDTH, GROUND_HEIGHT))
+            score_text = self.font.render(str(self.score), True, (255, 255, 255))
+            self.screen.blit(score_text, (WIN_WIDTH // 2 - 10, 50))
             pygame.display.update()
-
-
-        if self.should_exit:
-            self.exit()
+            self.clock.tick(60)
