@@ -57,5 +57,5 @@ class MainMenu:
                             elif button.text == "Game 3":
                                 self.start_game("game_3")
                                 running = False
-                            elif button.text == "Выход":
+                            elif button.text == "Quit":
                                 self.quit()
