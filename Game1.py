@@ -129,7 +129,7 @@ class Game_1:
         self.screen.blit(score_text, (10, 5))
 
 
-        elapsed_time = int(time.time() - self.start_time)  # Время в секундах
+        elapsed_time = int(time.time() - self.start_time)
         timer_text = self.timer_font.render(f"Time: {elapsed_time}", True, (255, 255, 255))
         timer_rect = timer_text.get_rect(bottomright=(self.WIN_WIDTH - 10, self.WIN_HEIGHT - 10))
         self.screen.blit(timer_text, timer_rect)
