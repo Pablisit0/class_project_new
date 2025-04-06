@@ -17,7 +17,7 @@ PIPE_WIDTH = 70
 class Bird:
     def __init__(self):
         self.x = 100
-        self.y = WIN_HEIGHT // 2
+        self.y = WIN_HEIGHT // 4
         self.velocity = 0
         self.gravity = 0.5
         self.jump_strength = -10

@@ -115,8 +115,8 @@ class Game_1:
         return True
 
     def update(self):
-        for o in self.objects:
-            o.update()
+        for obj in self.objects:
+            obj.update()
 
     def draw(self):
         self.screen.blit(self.bg, (0, 0))
