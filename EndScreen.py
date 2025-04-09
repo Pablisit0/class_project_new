@@ -1,47 +1,53 @@
 import pygame
+from Button_file import BeautifulButton
 
 class EndScreen:
-    def __init__(self, screen, exit_callback, restart_callback):
+    def __init__(self, screen, width, height, message, score=None):
         self.screen = screen
-        self.exit_callback = exit_callback
-        self.restart_callback = restart_callback
-        self.font = pygame.font.Font(None, 72)
-        self.button_font = pygame.font.Font(None, 36)
-        self.title_text = self.font.render("Игра окончена!", True, (255, 0, 0))
-        self.restart_button = pygame.Rect(200, 300, 200, 50)
-        self.quit_button = pygame.Rect(200, 370, 200, 50)
+        self.width = width
+        self.height = height
+        self.message = message
+        self.score = score
 
-    def draw(self):
-        self.screen.fill((0, 0, 0))
+        # Кнопки расположены по центру
+        button_width = 200
+        button_height = 50
+        self.restart_button = BeautifulButton("Restart", (self.width - button_width) // 2, 350, button_width, button_height)
+        self.quit_button = BeautifulButton("Quit", (self.width - button_width) // 2, 420, button_width, button_height)
 
+    def run(self, restart_callback, quit_callback):
+        font = pygame.font.Font(None, 72)
+        running = True
+        while running:
+            self.screen.fill((255, 255, 255))
 
-        title_rect = self.title_text.get_rect(center=(self.screen.get_width() // 2, 150))
-        self.screen.blit(self.title_text, title_rect)
+            title_text = font.render(self.message, True, (255, 0, 0))
+            title_rect = title_text.get_rect(center=(self.width // 2, self.height // 3))
+            self.screen.blit(title_text, title_rect)
 
+            if self.score is not None:
+                score_font = pygame.font.Font(None, 48)
+                score_text = score_font.render(f"Score: {self.score}", True, (0, 0, 0))
+                score_rect = score_text.get_rect(center=(self.width // 2, self.height // 3 + 80))
+                self.screen.blit(score_text, score_rect)
 
-        pygame.draw.rect(self.screen, (0, 255, 0), self.restart_button)
-        restart_text = self.button_font.render("Заново", True, (0, 0, 0))
-        restart_text_rect = restart_text.get_rect(center=self.restart_button.center)
-        self.screen.blit(restart_text, restart_text_rect)
+            mouse_pos = pygame.mouse.get_pos()
+            self.restart_button.draw(self.screen)
+            self.quit_button.draw(self.screen)
 
+            self.restart_button.check_hover(mouse_pos)
+            self.quit_button.check_hover(mouse_pos)
 
-        pygame.draw.rect(self.screen, (255, 0, 0), self.quit_button)
-        quit_text = self.button_font.render("Выход", True, (0, 0, 0))
-        quit_text_rect = quit_text.get_rect(center=self.quit_button.center)
-        self.screen.blit(quit_text, quit_text_rect)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_callback()
+                    return
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.restart_button.check_click(mouse_pos):
+                        restart_callback()
+                        return
+                    if self.quit_button.check_click(mouse_pos):
+                        quit_callback()
+                        return
 
-        pygame.display.flip()
-
-    def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.exit_callback()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                if self.restart_button.collidepoint(mouse_pos):
-                    self.restart_callback()
-                elif self.quit_button.collidepoint(mouse_pos):
-                    self.exit_callback()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.exit_callback()
+            pygame.display.update()

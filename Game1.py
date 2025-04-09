@@ -5,6 +5,8 @@ import time
 from Blocks_physics import Platform
 from PlayerMovement import Player
 from Button_file import BeautifulButton
+from EndScreen import EndScreen
+
 
 class Game_1:
     def __init__(self, exit_callback, quit_callback):
@@ -161,44 +163,21 @@ class Game_1:
         self.show_end_screen("You Won!")
 
     def show_end_screen(self, message):
-        # Белый фон
-        self.screen.fill((255, 255, 255))
+        end_screen = EndScreen(
+            screen=self.screen,
+            width=self.WIN_WIDTH,
+            height=self.WIN_HEIGHT,
+            message=message,
+            score=self.score  # Будет отображаться, если он есть
+        )
+        end_screen.run(
+            restart_callback=lambda: self.restart_game(),
+            quit_callback=self.exit
+        )
 
-
-        font = pygame.font.Font(None, 72)  # Крупный шрифт
-        text = font.render(message, True, (255, 0, 0))  # Красный цвет
-        text_rect = text.get_rect(center=(self.WIN_WIDTH // 2, self.WIN_HEIGHT // 3))
-        self.screen.blit(text, text_rect)
-
-
-        restart_button = BeautifulButton("Restart", 300, 350, 200, 50)
-        quit_button = BeautifulButton("Quit", 300, 420, 200, 50)
-
-        running = True
-        while running:
-            mouse_pos = pygame.mouse.get_pos()
-
-
-            restart_button.draw(self.screen)
-            quit_button.draw(self.screen)
-
-
-            restart_button.check_hover(mouse_pos)
-            quit_button.check_hover(mouse_pos)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.quit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if restart_button.check_click(mouse_pos):
-                        self.__init__(self.exit, self.quit)
-                        self.run()
-                        return
-                    if quit_button.check_click(mouse_pos):
-                        self.exit()
-                        return
-
-            pygame.display.update()
+    def restart_game(self):
+        self.__init__(self.exit, self.quit)
+        self.run()
 
     def run(self):
         self.load_level()
