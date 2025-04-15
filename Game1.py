@@ -9,7 +9,7 @@ from EndScreen import EndScreen
 
 
 class Game_1:
-    def __init__(self, exit_callback, quit_callback):
+    def __init__(self, exit_callback, quit_callback, start_level=0):
         pygame.init()
         self.WIN_WIDTH = 800
         self.WIN_HEIGHT = 640
@@ -26,6 +26,7 @@ class Game_1:
         self.score = 0
         self.coins = []
         self.platforms = []
+        self.current_level = start_level
 
         self.screen = pygame.display.set_mode(self.DISPLAY)
         pygame.display.set_caption("Game1")
@@ -44,27 +45,96 @@ class Game_1:
             SpawnPoint(700, -75)
         ]
         self.objects = []
-        self.level = [
-            "-------------------------",
-            "-                       -",
-            "-                       -",
-            "-             *         -",
-            "-            --         -",
-            "-                       -",
-            "--                      -",
-            "-                     ---",
-            "-                       -",
-            "-       *               -",
-            "-      ---        ---   -",
-            "-                       -",
-            "-           *           -",
-            "-   -----------       ---",
-            "-                       -",
-            "-                -   *  -",
-            "-                   --  -",
-            "-                       -",
-            "-                       -",
-            "-------------------------"
+
+        self.levels = [
+            [
+                "-------------------------",
+                "-                       -",
+                "-                       -",
+                "-             *         -",
+                "-            --         -",
+                "-                       -",
+                "--                      -",
+                "-                     ---",
+                "-                       -",
+                "-       *               -",
+                "-      ---        ---   -",
+                "-                       -",
+                "-           *           -",
+                "-   -----------       ---",
+                "-                       -",
+                "-                -   *  -",
+                "-                   --  -",
+                "-                       -",
+                "-                       -",
+                "-------------------------"
+            ],
+            [
+                "-------------------------",
+                "-                       -",
+                "-                       -",
+                "-         *             -",
+                "-       ---             -",
+                "-                       -",
+                "---                  ----",
+                "-                       -",
+                "-       *               -",
+                "-      ---          *   -",
+                "-                  ---  -",
+                "-                       -",
+                "-                       -",
+                "-              *        -",
+                "-    -------------      -",
+                "-                       -",
+                "-                      *-",
+                "-                     ---",
+                "-                       -",
+                "-------------------------"
+            ],
+            [
+                "-------------------------",
+                "-                       -",
+                "-                       -",
+                "-                *      -",
+                "-       *               -",
+                "-      ---              -",
+                "-                       -",
+                "-   *        ---        -",
+                "-           --          -",
+                "-         *             -",
+                "-      ---              -",
+                "-                       -",
+                "-  *      ---     *     -",
+                "-       ---             -",
+                "-                       -",
+                "-   ---           ---   -",
+                "-                       -",
+                "-                       -",
+                "-                       -",
+                "-------------------------"
+            ],
+            [
+                "-------------------------",
+                "-                       -",
+                "-                       -",
+                "-                       -",
+                "-                       -",
+                "-                       -",
+                "-                       -",
+                "- *                     -",
+                "---                     -",
+                "-                     * -",
+                "-                     ---",
+                "-                       -",
+                "- *     -----           -",
+                "---                     -",
+                "-                       -",
+                "-          -----        -",
+                "- *                     -",
+                "---                     -",
+                "-                       -",
+                "-------------------------"
+            ]
         ]
 
         self.last_spawn_time = time.time()
@@ -83,8 +153,16 @@ class Game_1:
         return new_object
 
     def load_level(self):
+        for platform in self.platforms:
+            platform.kill()
+        for coin in self.coins:
+            coin.kill()
+
+        self.platforms = []
+        self.coins = []
+
         x = y = 0
-        for row in self.level:
+        for row in self.levels[self.current_level]:
             for col in row:
                 if col == "-":
                     pf = Platform(x, y)
@@ -110,11 +188,25 @@ class Game_1:
                 self.coins.remove(coin)
                 self.score += 1
                 coin.kill()
-                if self.score == 4:
-                    self.you_won()
+                if len(self.coins) == 0:
+                    self.next_level()
                     return False
 
         return True
+
+    def next_level(self):
+        self.current_level += 1
+        if self.current_level >= len(self.levels):
+            self.you_won()
+        else:
+            for meteor in self.objects[:]:
+                meteor.kill()
+                self.objects.remove(meteor)
+
+
+            self.hero.rect.x = 55
+            self.hero.rect.y = 55
+            self.load_level()
 
     def update(self):
         for obj in self.objects:
@@ -125,11 +217,12 @@ class Game_1:
         self.hero.update(self.left, self.right, self.up, self.platforms)
         self.entities.draw(self.screen)
 
-
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Coins: {self.score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 5))
 
+        level_text = font.render(f"Level: {self.current_level + 1}/{len(self.levels)}", True, (255, 255, 255))
+        self.screen.blit(level_text, (10, 40))
 
         elapsed_time = int(time.time() - self.start_time)
         timer_text = self.timer_font.render(f"Time: {elapsed_time}", True, (255, 255, 255))
@@ -168,7 +261,7 @@ class Game_1:
             width=self.WIN_WIDTH,
             height=self.WIN_HEIGHT,
             message=message,
-            score=self.score  # Будет отображаться, если он есть
+            score=self.score
         )
         end_screen.run(
             restart_callback=lambda: self.restart_game(),
