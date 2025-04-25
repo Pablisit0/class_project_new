@@ -1,5 +1,4 @@
 import pygame
-import sys
 import random
 from pygame import *
 from Button_file import BeautifulButton

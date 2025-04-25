@@ -203,7 +203,6 @@ class Game_1:
                 meteor.kill()
                 self.objects.remove(meteor)
 
-
             self.hero.rect.x = 55
             self.hero.rect.y = 55
             self.load_level()
@@ -240,6 +239,9 @@ class Game_1:
                     self.right = True
                 if e.key == K_UP:
                     self.up = True
+                if e.key == K_ESCAPE:
+                    self.exit()
+                    return False
             if e.type == KEYUP:
                 if e.key == K_RIGHT:
                     self.right = False

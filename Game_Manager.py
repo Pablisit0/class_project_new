@@ -14,15 +14,14 @@ class GameManager:
         self.STATE_GAME_1 = "game_1"
         self.STATE_GAME_2 = "game_2"
         self.STATE_GAME_3 = "game_3"
-        self.STATE_LEVEL_SELECT = "level_select"  # Новое состояние
+        self.STATE_LEVEL_SELECT = "level_select"
         self.current_state = self.STATE_MENU
         self.main_menu = MainMenu(self.start_game, self.quit)
-        self.level_select_menu = None  # Будет инициализировано при необходимости
+        self.level_select_menu = None
         self.active_game = None
 
     def start_game(self, game_name):
         if game_name == "game_1":
-            # Вместо непосредственного запуска игры, показываем меню выбора уровня
             self.level_select_menu = LevelSelectMenu(self.start_selected_level, self.exit_to_menu)
             self.current_state = self.STATE_LEVEL_SELECT
         elif game_name == "game_2":
@@ -33,7 +32,6 @@ class GameManager:
             self.current_state = self.STATE_GAME_3
 
     def start_selected_level(self, level_num):
-        # Запускаем Game1 с выбранным уровнем
         self.active_game = Game_1(self.exit_to_menu, self.quit, level_num)
         self.current_state = self.STATE_GAME_1
 

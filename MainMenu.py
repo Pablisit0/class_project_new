@@ -9,12 +9,10 @@ class LevelSelectMenu:
         self.start_level = start_level_callback
         self.back = back_callback
 
-        # Заголовок
         self.font = pygame.font.Font(None, 48)
         self.title = self.font.render("Выберите уровень", True, (0, 0, 0))
         self.title_rect = self.title.get_rect(center=(self.WIDTH//2, 100))
 
-        # Кнопки уровней
         self.buttons = [
             BeautifulButton("Уровень 1", 200, 200, 200, 50),
             BeautifulButton("Уровень 2", 200, 270, 200, 50),
@@ -86,8 +84,8 @@ class MainMenu:
         ]
 
     def draw(self):
-        self.screen.fill((255, 255, 255))  # Белый фон
-        self.screen.blit(self.logo_image, self.logo_rect)  # Логотип
+        self.screen.fill((255, 255, 255))
+        self.screen.blit(self.logo_image, self.logo_rect)
 
 
         for button in self.buttons:
