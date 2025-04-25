@@ -1,7 +1,8 @@
 import pygame
 import random
 import time
-from pygame import image, transform
+from pygame import Surface, image, transform
+from Button_file import BeautifulButton
 from EndScreen import EndScreen
 
 
@@ -39,9 +40,16 @@ class Game_3:
         self.squares = []
         self.score = 0
         self.last_spawn_time = time.time()
-        self.spawn_interval = 0.5
+        self.initial_spawn_interval = 0.5
+        self.spawn_interval = self.initial_spawn_interval
         self.game_active = True
         self.restart_requested = False
+        self.last_speed_increase_score = 0
+
+    def update_difficulty(self):
+        if self.score >= self.last_speed_increase_score + 20:
+            self.last_speed_increase_score = self.score
+            self.spawn_interval = max(0.1, self.spawn_interval - 0.05)
 
     def draw_grid(self):
         for x in range(1, self.grid_size):
@@ -70,6 +78,7 @@ class Game_3:
             if square.rect.collidepoint(mouse_x, mouse_y):
                 self.squares.remove(square)
                 self.score += 1
+                self.update_difficulty()
 
     def draw_score(self):
         font = pygame.font.SysFont('Arial', 36, bold=True)
