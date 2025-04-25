@@ -1,7 +1,5 @@
 import pygame
 import random
-from pygame import *
-from Button_file import BeautifulButton
 from EndScreen import EndScreen
 
 WIN_WIDTH = 400
@@ -117,7 +115,6 @@ class Game_2:
             while running:
                 current_time = pygame.time.get_ticks()
 
-                # Обработка событий
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.quit_callback()
@@ -133,7 +130,6 @@ class Game_2:
                         self.bird.jump()
                         self.game_started = True
 
-                # Игровая логика
                 if self.game_active:
                     if current_time - self.last_pipe > PIPE_FREQUENCY and self.game_started:
                         self.pipes.append(Pipe())
@@ -149,13 +145,11 @@ class Game_2:
                         self.show_end_screen()
                         running = False
 
-                    # Обновление счёта
                     for pipe in self.pipes:
                         if pipe.x + PIPE_WIDTH < self.bird.x and not pipe.passed:
                             pipe.passed = True
                             self.score += 1
 
-                # Отрисовка
                 self.screen.fill((135, 206, 235))
                 for pipe in self.pipes:
                     pipe.draw(self.screen)
@@ -166,11 +160,9 @@ class Game_2:
                 pygame.display.update()
                 self.clock.tick(60)
 
-                # Проверка запроса рестарта
                 if self.restart_requested:
                     running = False
                     break
 
-            # Выход из цикла, если не требуется рестарт
             if not self.restart_requested:
                 break
