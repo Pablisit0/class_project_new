@@ -39,6 +39,7 @@ class Game_3:
         self.cell_size = 600 // self.grid_size
         self.squares = []
         self.score = 0
+        self.misses = 0
         self.last_spawn_time = time.time()
         self.initial_spawn_interval = 0.5
         self.spawn_interval = self.initial_spawn_interval
@@ -47,7 +48,7 @@ class Game_3:
         self.last_speed_increase_score = 0
 
     def update_difficulty(self):
-        if self.score >= self.last_speed_increase_score + 20:
+        if self.score >= self.last_speed_increase_score + 25:
             self.last_speed_increase_score = self.score
             self.spawn_interval = max(0.1, self.spawn_interval - 0.05)
 
@@ -74,24 +75,36 @@ class Game_3:
                 self.show_end_screen()
 
     def handle_click(self, mouse_x, mouse_y):
+        clicked_on_square = False
         for square in self.squares[:]:
             if square.rect.collidepoint(mouse_x, mouse_y):
                 self.squares.remove(square)
                 self.score += 1
                 self.update_difficulty()
+                clicked_on_square = True
 
-    def draw_score(self):
-        font = pygame.font.SysFont('Arial', 36, bold=True)
-        text = font.render(f"Score: {self.score}", True, (50, 50, 50))
-        self.screen.blit(text, (20, 20))
+        if not clicked_on_square and 0 <= mouse_x < 600 and 0 <= mouse_y < 600:
+            self.misses += 1
+
+    def draw_stats(self):
+        font = pygame.font.SysFont('Arial', 24)
+
+        # Счёт в левом верхнем углу
+        score_text = font.render(f"Score: {self.score}", True, (50, 50, 50))
+        self.screen.blit(score_text, (20, 20))
+
+        # Промахи в правом верхнем углу
+        misses_text = font.render(f"Misses: {self.misses}", True, (50, 50, 50))
+        misses_rect = misses_text.get_rect(topright=(580, 20))
+        self.screen.blit(misses_text, misses_rect)
 
     def show_end_screen(self):
         end_screen = EndScreen(
             screen=self.screen,
             width=600,
             height=600,
-            message="Game Over",
-            score=self.score
+            message="Game over",
+            score=f"{self.score} | Misses: {self.misses}"
         )
         end_screen.run(
             restart_callback=self.request_restart,
@@ -126,7 +139,7 @@ class Game_3:
                     self.draw_grid()
                     for square in self.squares:
                         square.draw(self.screen)
-                    self.draw_score()
+                    self.draw_stats()
 
                     if len(self.squares) >= 9:
                         self.show_end_screen()
