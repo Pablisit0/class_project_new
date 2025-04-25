@@ -1,8 +1,7 @@
 import pygame
 import random
 import time
-from pygame import Surface, image, transform
-from Button_file import BeautifulButton
+from pygame import image, transform
 from EndScreen import EndScreen
 
 
@@ -89,11 +88,9 @@ class Game_3:
     def draw_stats(self):
         font = pygame.font.SysFont('Arial', 24)
 
-        # Счёт в левом верхнем углу
         score_text = font.render(f"Score: {self.score}", True, (50, 50, 50))
         self.screen.blit(score_text, (20, 20))
 
-        # Промахи в правом верхнем углу
         misses_text = font.render(f"Misses: {self.misses}", True, (50, 50, 50))
         misses_rect = misses_text.get_rect(topright=(580, 20))
         self.screen.blit(misses_text, misses_rect)
