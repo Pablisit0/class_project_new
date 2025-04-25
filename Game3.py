@@ -1,8 +1,8 @@
 import pygame
 import random
 import time
-from pygame import Surface, image, transform
-from Button_file import BeautifulButton
+from pygame import image, transform
+from EndScreen import EndScreen
 
 
 class Square:
@@ -41,7 +41,7 @@ class Game_3:
         self.last_spawn_time = time.time()
         self.spawn_interval = 0.5
         self.game_active = True
-        self.in_end_screen = False
+        self.restart_requested = False
 
     def draw_grid(self):
         for x in range(1, self.grid_size):
@@ -63,8 +63,7 @@ class Game_3:
                 x, y = random.choice(available)
                 self.squares.append(Square(x, y, 70, 90, self.cell_size, self.square_image))
             else:
-                self.game_over = True
-                self.show_game_over_screen = True
+                self.show_end_screen()
 
     def handle_click(self, mouse_x, mouse_y):
         for square in self.squares[:]:
@@ -78,95 +77,58 @@ class Game_3:
         self.screen.blit(text, (20, 20))
 
     def show_end_screen(self):
-        self.in_end_screen = True
+        end_screen = EndScreen(
+            screen=self.screen,
+            width=600,
+            height=600,
+            message="Game Over",
+            score=self.score
+        )
+        end_screen.run(
+            restart_callback=self.request_restart,
+            quit_callback=self.exit_callback
+        )
+        self.game_active = False
 
-
-        overlay = Surface((600, 600), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-
-
-        font = pygame.font.SysFont('Arial', 72, bold=True)
-        text = font.render("Game over", True, (255, 100, 100))
-        text_rect = text.get_rect(center=(300, 150))
-
-
-        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        score_rect = score_text.get_rect(center=(300, 250))
-
-
-        restart_btn = BeautifulButton("Restart", 150, 350, 300, 60)
-        menu_btn = BeautifulButton("Quit", 150, 450, 300, 60)
-
-        while self.in_end_screen:
-            mouse_pos = pygame.mouse.get_pos()
-
-
-            self.screen.fill((240, 240, 240))
-            self.draw_grid()
-            for square in self.squares:
-                square.draw(self.screen)
-
-
-            self.screen.blit(overlay, (0, 0))
-            self.screen.blit(text, text_rect)
-            self.screen.blit(score_text, score_rect)
-            restart_btn.draw(self.screen)
-            menu_btn.draw(self.screen)
-
-
-            restart_btn.check_hover(mouse_pos)
-            menu_btn.check_hover(mouse_pos)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.quit_callback()
-
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if restart_btn.check_click(mouse_pos):
-                        self.reset_game()
-                        self.in_end_screen = False
-                        return
-
-                    if menu_btn.check_click(mouse_pos):
-                        self.in_end_screen = False
-                        self.game_active = False
-                        self.exit_callback()
-                        return
-
-            pygame.display.flip()
-            pygame.time.Clock().tick(60)
+    def request_restart(self):
+        self.restart_requested = True
 
     def run(self):
-        self.game_active = True
+        while True:
+            self.reset_game()
+            running = True
 
-        while self.game_active:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.quit_callback()
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.quit_callback()
+                        return
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self.exit_callback()
+                            return
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        self.handle_click(*pygame.mouse.get_pos())
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.game_active = False
-                        self.exit_callback()
+                if self.game_active:
+                    self.spawn_square()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and not self.in_end_screen:
-                    self.handle_click(*pygame.mouse.get_pos())
+                    self.screen.fill((240, 240, 240))
+                    self.draw_grid()
+                    for square in self.squares:
+                        square.draw(self.screen)
+                    self.draw_score()
 
+                    if len(self.squares) >= 9:
+                        self.show_end_screen()
+                        running = False
 
-            if not self.in_end_screen:
-                self.spawn_square()
+                pygame.display.update()
+                pygame.time.Clock().tick(60)
 
+                if self.restart_requested:
+                    running = False
+                    break
 
-                self.screen.fill((240, 240, 240))
-                self.draw_grid()
-                for square in self.squares:
-                    square.draw(self.screen)
-                self.draw_score()
-
-
-                if len(self.squares) >= 9:  # Все клетки заполнены
-                    self.in_end_screen = True
-                    self.show_end_screen()
-
-            pygame.display.update()
-            pygame.time.Clock().tick(60)
+            if not self.restart_requested:
+                break
