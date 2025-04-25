@@ -2,6 +2,7 @@ import pygame
 import random
 from pygame import *
 from Button_file import BeautifulButton
+from EndScreen import EndScreen
 
 WIN_WIDTH = 400
 WIN_HEIGHT = 600
@@ -69,6 +70,7 @@ class Game_2:
         self.font = pygame.font.SysFont('Arial', 30)
         self.exit_callback = exit_callback
         self.quit_callback = quit_callback
+        self.restart_requested = False
         self.reset_game()
 
     def reset_game(self):
@@ -77,8 +79,8 @@ class Game_2:
         self.score = 0
         self.last_pipe = pygame.time.get_ticks()
         self.game_active = True
-        self.in_end_screen = False
         self.game_started = False
+        self.restart_requested = False
 
     def check_collisions(self):
         if self.bird.rect.bottom >= WIN_HEIGHT - GROUND_HEIGHT:
@@ -92,93 +94,83 @@ class Game_2:
         return False
 
     def show_end_screen(self):
-        overlay = Surface((WIN_WIDTH, WIN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        font_large = pygame.font.SysFont('Arial', 50, bold=True)
-        game_over_text = font_large.render("Game Over", True, (255, 100, 100))
-        game_over_rect = game_over_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3))
-        score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
-        score_rect = score_text.get_rect(center=(WIN_WIDTH // 2, WIN_HEIGHT // 3 + 70))
-        restart_btn = BeautifulButton("Restart", 50, 350, 300, 50)
-        menu_btn = BeautifulButton("Quit", 50, 420, 300, 50)
-        self.in_end_screen = True
+        end_screen = EndScreen(
+            screen=self.screen,
+            width=WIN_WIDTH,
+            height=WIN_HEIGHT,
+            message="Game Over",
+            score=self.score
+        )
+        end_screen.run(
+            restart_callback=self.request_restart,
+            quit_callback=self.exit_callback
+        )
 
-        while self.in_end_screen:
-            mouse_pos = pygame.mouse.get_pos()
-            self.screen.fill((135, 206, 235))
-            for pipe in self.pipes:
-                pipe.draw(self.screen)
-            self.bird.draw(self.screen)
-            pygame.draw.rect(self.screen, (139, 69, 19), (0, WIN_HEIGHT - GROUND_HEIGHT, WIN_WIDTH, GROUND_HEIGHT))
-            self.screen.blit(overlay, (0, 0))
-            self.screen.blit(game_over_text, game_over_rect)
-            self.screen.blit(score_text, score_rect)
-            restart_btn.draw(self.screen)
-            menu_btn.draw(self.screen)
-            restart_btn.check_hover(mouse_pos)
-            menu_btn.check_hover(mouse_pos)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.quit_callback()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if restart_btn.check_click(mouse_pos):
-                        self.reset_game()
-                        self.in_end_screen = False
-                        return
-                    if menu_btn.check_click(mouse_pos):
-                        self.in_end_screen = False
-                        self.game_active = False
-                        self.exit_callback()
-                        return
-
-            pygame.display.update()
-            self.clock.tick(60)
+    def request_restart(self):
+        self.restart_requested = True
 
     def run(self):
-        while self.game_active:
-            current_time = pygame.time.get_ticks()
+        while True:
+            self.reset_game()
+            running = True
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.quit_callback()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
+            while running:
+                current_time = pygame.time.get_ticks()
+
+                # Обработка событий
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.quit_callback()
+                        return
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.bird.jump()
+                            self.game_started = True
+                        if event.key == pygame.K_ESCAPE:
+                            self.exit_callback()
+                            return
+                    if event.type == pygame.MOUSEBUTTONDOWN:
                         self.bird.jump()
                         self.game_started = True
-                    if event.key == pygame.K_ESCAPE:
-                        self.game_active = False
-                        self.exit_callback()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.bird.jump()
-                    self.game_started = True
 
-            if not self.in_end_screen:
-                if current_time - self.last_pipe > PIPE_FREQUENCY and self.game_started:
-                    self.pipes.append(Pipe())
-                    self.last_pipe = current_time
+                # Игровая логика
+                if self.game_active:
+                    if current_time - self.last_pipe > PIPE_FREQUENCY and self.game_started:
+                        self.pipes.append(Pipe())
+                        self.last_pipe = current_time
 
-                self.bird.update()
+                    self.bird.update()
+                    for pipe in self.pipes:
+                        pipe.update()
+
+                    self.pipes = [pipe for pipe in self.pipes if pipe.x > -PIPE_WIDTH]
+
+                    if self.check_collisions():
+                        self.show_end_screen()
+                        running = False
+
+                    # Обновление счёта
+                    for pipe in self.pipes:
+                        if pipe.x + PIPE_WIDTH < self.bird.x and not pipe.passed:
+                            pipe.passed = True
+                            self.score += 1
+
+                # Отрисовка
+                self.screen.fill((135, 206, 235))
                 for pipe in self.pipes:
-                    pipe.update()
+                    pipe.draw(self.screen)
+                self.bird.draw(self.screen)
+                pygame.draw.rect(self.screen, (139, 69, 19), (0, WIN_HEIGHT - GROUND_HEIGHT, WIN_WIDTH, GROUND_HEIGHT))
+                score_text = self.font.render(str(self.score), True, (255, 255, 255))
+                self.screen.blit(score_text, (WIN_WIDTH // 2 - 10, 50))
+                pygame.display.update()
+                self.clock.tick(60)
 
-                self.pipes = [pipe for pipe in self.pipes if pipe.x > -PIPE_WIDTH]
+                # Проверка запроса рестарта
+                if self.restart_requested:
+                    running = False
+                    break
 
-                if self.check_collisions():
-                    self.in_end_screen = True
-                    self.show_end_screen()
-
-                for pipe in self.pipes:
-                    if pipe.x + PIPE_WIDTH < self.bird.x and not pipe.passed:
-                        pipe.passed = True
-                        self.score += 1
-
-            self.screen.fill((135, 206, 235))
-            for pipe in self.pipes:
-                pipe.draw(self.screen)
-            self.bird.draw(self.screen)
-            pygame.draw.rect(self.screen, (139, 69, 19), (0, WIN_HEIGHT - GROUND_HEIGHT, WIN_WIDTH, GROUND_HEIGHT))
-            score_text = self.font.render(str(self.score), True, (255, 255, 255))
-            self.screen.blit(score_text, (WIN_WIDTH // 2 - 10, 50))
-            pygame.display.update()
-            self.clock.tick(60)
+            # Выход из цикла, если не требуется рестарт
+            if not self.restart_requested:
+                break
