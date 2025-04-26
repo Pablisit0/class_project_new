@@ -4,7 +4,6 @@ import random
 import time
 from Blocks_physics import Platform
 from PlayerMovement import Player
-from Button_file import BeautifulButton
 from EndScreen import EndScreen
 
 
@@ -27,6 +26,7 @@ class Game_1:
         self.coins = []
         self.platforms = []
         self.current_level = start_level
+        self.start_level = start_level
 
         self.screen = pygame.display.set_mode(self.DISPLAY)
         pygame.display.set_caption("Game1")
@@ -223,8 +223,16 @@ class Game_1:
         level_text = font.render(f"Level: {self.current_level + 1}/{len(self.levels)}", True, (255, 255, 255))
         self.screen.blit(level_text, (10, 40))
 
-        elapsed_time = int(time.time() - self.start_time)
-        timer_text = self.timer_font.render(f"Time: {elapsed_time}", True, (255, 255, 255))
+        elapsed = time.time() - self.start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        milliseconds = int((elapsed % 1) * 100)
+
+        timer_text = self.timer_font.render(
+            f"Time: {minutes:02d}:{seconds:02d}.{milliseconds:02d}",
+            True,
+            (255, 255, 255)
+        )
         timer_rect = timer_text.get_rect(bottomright=(self.WIN_WIDTH - 10, self.WIN_HEIGHT - 10))
         self.screen.blit(timer_text, timer_rect)
 
@@ -271,7 +279,7 @@ class Game_1:
         )
 
     def restart_game(self):
-        self.__init__(self.exit, self.quit)
+        self.__init__(self.exit, self.quit, self.start_level)
         self.run()
 
     def run(self):
