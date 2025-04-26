@@ -63,7 +63,7 @@ class Game_2:
     def __init__(self, exit_callback, quit_callback):
         pygame.init()
         self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-        pygame.display.set_caption("Flappy Bird")
+        pygame.display.set_caption("Game 2")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Arial', 30)
         self.exit_callback = exit_callback
