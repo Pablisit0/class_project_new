@@ -9,7 +9,6 @@ class EndScreen:
         self.message = message
         self.score = score
 
-        # Кнопки расположены по центру
         button_width = 200
         button_height = 50
         self.restart_button = BeautifulButton("Restart", (self.width - button_width) // 2, 350, button_width, button_height)
